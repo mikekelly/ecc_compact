@@ -15,7 +15,7 @@
 
 -module(ecc_compact).
 -export([is_compact/1, generate_key/0, recover_compact_key/1,
-         recover_compressed_key/1]).
+         recover_compressed_key/1, recover_compressed_key_r1/1]).
 -on_load(init/0).
 
 -include_lib("public_key/include/public_key.hrl").
@@ -100,6 +100,11 @@ recover_compressed_key(C) when is_binary(C), byte_size(C) == 33 ->
     <<TaggedFullPoint:65/binary>> = recover_compressed_nif(C),
     {#'ECPoint'{point = TaggedFullPoint}, {namedCurve, ?secp256k1}}.
 
+-spec recover_compressed_key_r1(compressed_point()) -> public_key_p256().
+recover_compressed_key_r1(C) when is_binary(C), byte_size(C) == 33 ->
+    <<TaggedFullPoint:65/binary>> = recover_compressed_r1_nif(C),
+    {#'ECPoint'{point = TaggedFullPoint}, {namedCurve, ?secp256r1}}.
+
 %% @doc Returns whether a given key is compliant with the compactness
 %% restrictions. In the case that the key is compliant, also return the bare X
 %% coordinate.
@@ -129,6 +134,9 @@ recover_compact_nif(_) ->
     not_loaded(?LINE).
 
 recover_compressed_nif(_) ->
+    not_loaded(?LINE).
+
+recover_compressed_r1_nif(_) ->
     not_loaded(?LINE).
 
 not_loaded(Line) ->

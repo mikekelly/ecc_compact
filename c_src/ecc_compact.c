@@ -343,10 +343,63 @@ CantAllocGroup:
     return ret;
 }
 
+static ERL_NIF_TERM
+recover_compressed_r1(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[])
+{
+    EC_GROUP *      secp256r1;
+    EC_POINT *      point;
+    ErlNifBinary    bin;
+    ERL_NIF_TERM    ret;
+
+    if (argc != 1)
+    {
+        return enif_make_badarg(env);
+    }
+
+    secp256r1 = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
+
+    if (secp256r1 == NULL)
+    {
+        ret = enif_raise_exception(env, atom_enomem);
+        goto CantAllocGroup;
+    }
+
+    if (term2point(env, argv[0], secp256r1, &point) != 1)
+    {
+        ret = enif_raise_exception(env, atom_enotsup);
+        goto CantUncompressPoint;
+    }
+
+    if (!enif_alloc_binary(kUncompressedPoint256, &bin))
+    {
+        ret = enif_raise_exception(env, atom_enomem);
+        goto CantAllocResult;
+    }
+
+    if (EC_POINT_point2oct(secp256r1, point, POINT_CONVERSION_UNCOMPRESSED, bin.data, kUncompressedPoint256, NULL) != kUncompressedPoint256)
+    {
+        enif_release_binary(&bin);
+        ret = enif_raise_exception(env, atom_enotsup);
+        goto CantFillResult;
+    }
+
+    ret = enif_make_binary(env, &bin);
+
+CantFillResult:
+CantAllocResult:
+    EC_POINT_free(point);
+CantUncompressPoint:
+    EC_GROUP_free(secp256r1);
+CantAllocGroup:
+
+    return ret;
+}
+
 static ErlNifFunc nif_funcs[] = {
     {"is_compact_nif", 1, is_compact, 0},
     {"recover_compact_nif", 1, recover_compact, 0},
-    {"recover_compressed_nif", 1, recover_compressed, 0}
+    {"recover_compressed_nif", 1, recover_compressed, 0},
+    {"recover_compressed_r1_nif", 1, recover_compressed_r1, 0}
 };
 
 static int

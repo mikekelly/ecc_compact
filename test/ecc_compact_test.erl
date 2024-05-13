@@ -34,6 +34,12 @@ even_y_secp256k1_key() ->
           210,81,255,21,59,227,197,245,116,226,146,87,254,223,114,215,
           77,82,108,166,10,22,186,72,85,119,155,25,100,141,231,228>>}.
 
+odd_y_secp256r1_key() ->
+    {'ECPrivateKey',1,<<86,28,246,201,158,79,65,1,49,173,240,17,129,187,26,122,219,211,61,71,120,4,61,92,250,134,31,161,67,127,32,2>>,{namedCurve,{1,2,840,10045,3,1,7}},<<4,246,247,15,236,243,77,38,142,46,8,125,142,50,233,59,197,0,99,219,238,179,76,246,234,57,45,139,127,186,240,6,131,56,253,255,132,75,65,178,138,162,246,214,39,150,78,224,136,82,211,50,141,54,1,110,187,241,77,123,167,251,185,158,83>>}.
+
+even_y_secp256r1_key() ->
+    {'ECPrivateKey',1,<<27,92,109,149,123,180,85,177,114,53,184,187,96,174,95,196,250,203,122,205,46,189,38,234,254,196,174,201,9,168,142,82>>,{namedCurve,{1,2,840,10045,3,1,7}},<<4,83,110,150,192,107,164,207,128,159,195,151,186,231,223,117,188,231,122,3,171,68,23,125,181,186,155,5,19,134,185,84,203,124,183,22,205,171,185,117,54,152,238,118,79,1,204,126,109,147,83,188,69,232,117,27,117,9,104,54,21,124,206,213,202>>}.
+
 ecc_noncompliant_test() ->
     Key = generate_non_compliant_key(),
     ?assertNot(ecc_compact:is_compact(Key)),
@@ -103,4 +109,26 @@ roundtrip_k256_even_y_test() ->
     ?assertEqual(Y rem 2, 0),
     CompressedKey = <<2, X/binary>>,
     UncompressedPubKey = ecc_compact:recover_compressed_key(CompressedKey),
+    ?assertEqual(UncompressedPubKey, ECPubKey).
+
+roundtrip_p256_odd_y_test() ->
+    Key = odd_y_secp256r1_key(),
+    #'ECPrivateKey'{parameters=_Params, publicKey=PubKey} = Key,
+    ECPubKey = {#'ECPoint'{point=PubKey}, {namedCurve, ?secp256r1}},
+    <<4, X:32/binary, Y:256>> = PubKey,
+    % Y should be odd
+    ?assertEqual(Y rem 2, 1),
+    CompressedKey = <<3, X/binary>>,
+    UncompressedPubKey = ecc_compact:recover_compressed_key_r1(CompressedKey),
+    ?assertEqual(UncompressedPubKey, ECPubKey).
+
+roundtrip_p256_even_y_test() ->
+    Key = even_y_secp256r1_key(),
+    #'ECPrivateKey'{parameters=_Params, publicKey=PubKey} = Key,
+    ECPubKey = {#'ECPoint'{point=PubKey}, {namedCurve, ?secp256r1}},
+    <<4, X:32/binary, Y:256>> = PubKey,
+    % Y should be even
+    ?assertEqual(Y rem 2, 0),
+    CompressedKey = <<2, X/binary>>,
+    UncompressedPubKey = ecc_compact:recover_compressed_key_r1(CompressedKey),
     ?assertEqual(UncompressedPubKey, ECPubKey).
