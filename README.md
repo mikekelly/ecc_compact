@@ -14,6 +14,13 @@ Building
 
 Simply use `make` to build the library.
 
+Running in a OTP 20.1 docker container
+--------
+If you don't have OTP 20.1 locally, you can run it in a docker container like so:
+```
+docker-compose run dev ./rebar3 as test do eunit
+```
+
 Limitations
 -----------
 

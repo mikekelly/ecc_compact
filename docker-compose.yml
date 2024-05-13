@@ -1,0 +1,7 @@
+version: '3.8'
+services:
+  dev:
+    build: .
+    volumes:
+      - .:/ecc_compact
+    working_dir: /ecc_compact
